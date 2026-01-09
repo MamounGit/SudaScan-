@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>المكتبة السودانية لمسح الملفات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        .box {
+            background: #fff;
+            width: 500px;
+            margin: auto;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #ccc;
+            direction: rtl;
+        }
+
+        h1 {
+            color: #006633;
+            margin-bottom: 20px;
+        }
+
+        label, select, button {
+            font-size: 16px;
+            margin: 8px 5px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background-color: #006633;
+            color: #fff;
+            font-weight: bold;
+        }
+
+            button:hover {
+                background-color: #004d26;
+            }
+
+        img {
+            max-width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        a.download-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background-color: #006633;
+            color: #fff;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        #message {
+            margin-top: 15px;
+            color: #006633;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>المكتبة السودانية لمسح الملفات</h1>
+
+        <label for="format">اختر صيغة الإخراج:</label>
+        <select id="format">
+            <option value="png">صورة PNG</option>
+            <option value="pdf">مستند PDF</option>
+        </select>
+        <br>
+
+        <button onclick="scan()">مسح الملف</button>
+        <button onclick="resetResult()">إعادة تعيين</button>
+
+        <div id="message"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function scan() {
+            let format = document.getElementById("format").value;
+            const resultDiv = document.getElementById("result");
+            const messageDiv = document.getElementById("message");
+
+            messageDiv.innerText = "جاري المسح، الرجاء الانتظار...";
+            resultDiv.innerHTML = "";
+
+            fetch("http://localhost:5050/scan?format=" + format, { method: "POST" })
+                .then(r => r.blob())
+                .then(b => {
+                    messageDiv.innerText = "تم المسح بنجاح!";
+
+                    if (format === "png") {
+                        // عرض الصورة
+                        const img = document.createElement("img");
+                        img.src = URL.createObjectURL(b);
+                        resultDiv.appendChild(img);
+
+                        // زر تحميل PNG
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(b);
+                        link.download = "scan.png";
+                        link.innerText = "📄 تحميل صورة PNG";
+                        link.className = "download-link";
+                        resultDiv.appendChild(link);
+
+                    } else if (format === "pdf") {
+                        // زر تحميل PDF
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(b);
+                        link.download = "scan.pdf";
+                        link.innerText = "📄 تحميل مستند PDF";
+                        link.className = "download-link";
+                        resultDiv.appendChild(link);
+                    }
+                })
+                .catch(err => {
+                    messageDiv.innerText = "حدث خطأ أثناء المسح.";
+                    alert("خطأ: " + err);
+                });
+        }
+
+        function resetResult() {
+            document.getElementById("result").innerHTML = "";
+            document.getElementById("message").innerText = "";
+        }
+    </script>
+
+</body>
+</html>

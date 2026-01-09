@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+
+		<OutputType>WinExe</OutputType>
+
+	
+		<UseWindowsForms>true</UseWindowsForms>
+
+		
+		<ApplicationIcon>appicon.ico</ApplicationIcon>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<COMReference Include="WIA">
+			<Guid>{6BDD1FC6-810F-11D0-BEC7-08002BE2092F}</Guid>
+			<VersionMajor>2</VersionMajor>
+			<VersionMinor>0</VersionMinor>
+			<Lcid>0</Lcid>
+			<WrapperTool>tlbimp</WrapperTool>
+			<EmbedInteropTypes>false</EmbedInteropTypes>
+		</COMReference>
+		<COMReference Include="WIA">
+		  <WrapperTool>tlbimp</WrapperTool>
+		  <VersionMinor>0</VersionMinor>
+		  <VersionMajor>1</VersionMajor>
+		  <Guid>94a0e92d-43c0-494e-ac29-fd45948a5221</Guid>
+		  <Lcid>0</Lcid>
+		  <Isolated>false</Isolated>
+		  <EmbedInteropTypes>False</EmbedInteropTypes>
+		</COMReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="PdfSharp" Version="6.2.4" />
+	</ItemGroup>
+
+</Project>
