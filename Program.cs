@@ -1,43 +1,51 @@
 ﻿using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using SudaScan.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5050");
-builder.Services.AddCors();
+// 🔹 إيجاد منفذ فارغ تلقائيًا لتجنب مشاكل AddressInUse
+TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+listener.Start();
+int freePort = ((IPEndPoint)listener.LocalEndpoint).Port;
+listener.Stop();
 
+// استخدم المنفذ الفارغ
+builder.WebHost.UseUrls($"http://localhost:{freePort}");
+
+builder.Services.AddCors();
 var app = builder.Build();
 
-// CORS
-app.UseCors(x =>
-    x.AllowAnyOrigin()
-     .AllowAnyMethod()
-     .AllowAnyHeader());
+// 🔹 تفعيل CORS
+app.UseCors(x => x
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
-// صفحات ثابتة
+// 🔹 صفحات ثابتة
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// مسح الملفات
+// 🔹 API لمسح الملفات
 app.MapPost("/scan", (string format) =>
 {
-    var img = SudaScan.Services.ScannerService.ScanImage();
+    var img = ScannerService.ScanImage();
 
     if (format == "pdf")
     {
-        var pdf = SudaScan.Services.PdfHelper.ImageToPdf(img);
+        var pdf = PdfHelper.ImageToPdf(img);
         return Results.File(pdf, "application/pdf", "scan.pdf");
     }
 
     return Results.File(img, "image/png", "scan.png");
 });
 
-
-var url = "http://localhost:5050";
+// 🔹 تشغيل المتصفح تلقائيًا بعد نصف ثانية
+var url = $"http://localhost:{freePort}";
 Task.Run(async () =>
 {
-    
-    await Task.Delay(800);
-
+    await Task.Delay(500);
     Process.Start(new ProcessStartInfo
     {
         FileName = url,
@@ -45,5 +53,5 @@ Task.Run(async () =>
     });
 });
 
-
+Console.WriteLine($"SudaScan running on {url}...");
 app.Run();

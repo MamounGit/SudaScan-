@@ -63,7 +63,7 @@
             font-weight: bold;
         }
 
-        #message {
+        #message, #endpoint {
             margin-top: 15px;
             color: #006633;
             font-weight: bold;
@@ -74,6 +74,11 @@
 
     <div class="box">
         <h1>المكتبة السودانية لمسح الملفات</h1>
+
+        <p>عنوان الـ Localhost (Endpoint) لتطبيقك:</p>
+        <div id="endpoint">جارٍ الحصول على العنوان...</div>
+        <button onclick="copyEndpoint()">نسخ العنوان</button>
+        <hr>
 
         <label for="format">اختر صيغة الإخراج:</label>
         <select id="format">
@@ -90,6 +95,17 @@
     </div>
 
     <script>
+        // عرض الـ Localhost Endpoint تلقائيًا
+        const endpointDiv = document.getElementById("endpoint");
+        const endpoint = window.location.origin;
+        endpointDiv.innerText = endpoint;
+
+        function copyEndpoint() {
+            navigator.clipboard.writeText(endpoint)
+                .then(() => alert("تم نسخ العنوان: " + endpoint))
+                .catch(err => alert("فشل النسخ: " + err));
+        }
+
         function scan() {
             let format = document.getElementById("format").value;
             const resultDiv = document.getElementById("result");
@@ -98,7 +114,7 @@
             messageDiv.innerText = "جاري المسح، الرجاء الانتظار...";
             resultDiv.innerHTML = "";
 
-            fetch("http://localhost:5050/scan?format=" + format, { method: "POST" })
+            fetch(`${endpoint}/scan?format=${format}`, { method: "POST" })
                 .then(r => r.blob())
                 .then(b => {
                     messageDiv.innerText = "تم المسح بنجاح!";
