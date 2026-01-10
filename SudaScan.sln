@@ -5,7 +5,7 @@ VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SudaScan", "SudaScan.csproj", "{E0E9289B-14A7-4132-B2AF-856CBC9E8504}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SudaScanApp", "..\SudaScanApp\SudaScanApp.vdproj", "{DFD275CB-B51A-43A3-8E98-5C3EC8E4DFD6}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SudaInstaller", "..\SudaInstaller\SudaInstaller.vdproj", "{4B226D51-DD5B-4999-9EA3-18C61062843C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,8 +17,8 @@ Global
 		{E0E9289B-14A7-4132-B2AF-856CBC9E8504}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E0E9289B-14A7-4132-B2AF-856CBC9E8504}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E0E9289B-14A7-4132-B2AF-856CBC9E8504}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DFD275CB-B51A-43A3-8E98-5C3EC8E4DFD6}.Debug|Any CPU.ActiveCfg = Debug
-		{DFD275CB-B51A-43A3-8E98-5C3EC8E4DFD6}.Release|Any CPU.ActiveCfg = Release
+		{4B226D51-DD5B-4999-9EA3-18C61062843C}.Debug|Any CPU.ActiveCfg = Debug
+		{4B226D51-DD5B-4999-9EA3-18C61062843C}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
