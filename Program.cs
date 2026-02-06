@@ -1,57 +1,68 @@
-﻿using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
 using SudaScan.Services;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 إيجاد منفذ فارغ تلقائيًا لتجنب مشاكل AddressInUse
-TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
-listener.Start();
-int freePort = ((IPEndPoint)listener.LocalEndpoint).Port;
-listener.Stop();
-
-// استخدم المنفذ الفارغ
-builder.WebHost.UseUrls($"http://localhost:{freePort}");
+int port = 59486;
+builder.WebHost.UseUrls($"http://localhost:{port}");
 
 builder.Services.AddCors();
+
 var app = builder.Build();
 
-// 🔹 تفعيل CORS
-app.UseCors(x => x
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
+app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
-// 🔹 صفحات ثابتة
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// 🔹 API لمسح الملفات
+// Endpoint لمسح الصورة
 app.MapPost("/scan", (string format) =>
 {
-    var img = ScannerService.ScanImage();
-
-    if (format == "pdf")
+    try
     {
-        var pdf = PdfHelper.ImageToPdf(img);
-        return Results.File(pdf, "application/pdf", "scan.pdf");
+        var img = ScannerService.ScanImage();
+
+        if (format == "pdf")
+            return Results.File(PdfHelper.ImageToPdf(img), "application/pdf", "scan.pdf");
+
+        return Results.File(img, "image/png");
     }
-
-    return Results.File(img, "image/png", "scan.png");
-});
-
-// 🔹 تشغيل المتصفح تلقائيًا بعد نصف ثانية
-var url = $"http://localhost:{freePort}";
-Task.Run(async () =>
-{
-    await Task.Delay(500);
-    Process.Start(new ProcessStartInfo
+    catch (Exception ex)
     {
-        FileName = url,
-        UseShellExecute = true
-    });
+        return Results.Text("Error: " + ex.Message);
+    }
 });
 
-Console.WriteLine($"SudaScan running on {url}...");
+// ✅ إضافة Status Endpoint
+app.MapGet("/status", () =>
+{
+    try
+    {
+        // اختبار بسيط: محاولة مسح صورة صغيرة أو التحقق من ScannerService
+        bool scannerReady = ScannerService.IsReady(); // لو عندك دالة جاهزة
+        return Results.Json(new { status = scannerReady ? "ok" : "error" });
+    }
+    catch
+    {
+        return Results.Json(new { status = "error" });
+    }
+});
+
+// فتح المتصفح تلقائيًا على صفحة الحالة
+Task.Run(() =>
+{
+    try
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = $"http://localhost:{port}/Index.html",
+            UseShellExecute = true
+        });
+    }
+    catch { }
+});
+
+Console.WriteLine($"SudaScan Agent running on http://localhost:{port}");
 app.Run();
