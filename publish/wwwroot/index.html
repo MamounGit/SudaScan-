@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>مكتبة مسح الملفات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding: 30px;
+            direction: rtl;
+        }
+
+        .box {
+            background: #fff;
+            width: 700px;
+            max-width: 95%;
+            margin: auto;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #ccc;
+        }
+
+        h1 {
+            color: #006633;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            background-color: #006633;
+            color: #fff;
+            font-weight: bold;
+            margin: 10px;
+            font-size: 16px;
+        }
+
+            button:hover {
+                background-color: #004d26;
+            }
+
+        #scanImage {
+            width: 90%;
+            max-width: 650px;
+            height: 400px;
+            object-fit: contain;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #006633;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>مكتبة مسح الملفات</h1>
+
+        <!-- حالة Agent -->
+        <div>
+            حالة الجهاز:
+            <span id="agentStatusDot" class="status-dot" style="background:red;"></span>
+            <span id="agentStatusText">غير متصل</span>
+        </div>
+
+        <br>
+
+        <!-- زر المسح -->
+        <button onclick="scan()">مسح ملف</button>
+
+        <!-- عرض الصورة -->
+        <img id="scanImage" />
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const agentScanUrl = "http://localhost:59486/scan?format=png";
+        const agentStatusUrl = "http://localhost:59486/status";
+
+        const agentStatusDot = document.getElementById("agentStatusDot");
+        const agentStatusText = document.getElementById("agentStatusText");
+
+        // فحص حالة Agent
+        async function checkAgent() {
+            try {
+                const res = await fetch(agentStatusUrl);
+                const data = await res.json();
+
+                if (data.status === "ready") {
+                    agentStatusDot.style.background = "green";
+                    agentStatusText.innerText = "جاهز";
+                } else if (data.status === "no_scanner") {
+                    agentStatusDot.style.background = "orange";
+                    agentStatusText.innerText = "لا يوجد جهاز مسح";
+                } else {
+                    agentStatusDot.style.background = "red";
+                    agentStatusText.innerText = "خطأ في الخدمة";
+                }
+            } catch {
+                agentStatusDot.style.background = "red";
+                agentStatusText.innerText = "غير متصل";
+            }
+        }
+
+        checkAgent();
+        setInterval(checkAgent, 2000);
+
+        // وظيفة المسح
+        function scan() {
+            const img = document.getElementById("scanImage");
+            const status = document.getElementById("status");
+
+            status.innerText = "جاري المسح...";
+            img.style.display = "none";
+
+            fetch(agentScanUrl, { method: "POST" })
+                .then(res => {
+                    if (!res.ok) throw new Error("Scan failed");
+                    return res.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    img.src = url;
+                    img.onload = () => {
+                        img.style.display = "block";
+                        status.innerText = "✔ تم المسح بنجاح";
+                    };
+                })
+                .catch(err => {
+                    console.error(err);
+                    status.innerText = "❌ فشل عملية المسح";
+                });
+        }
+    </script>
+
+</body>
+</html>
