@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using SudaScan.Services;
 using System.Diagnostics;
+using WIA;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,47 +18,80 @@ app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-// Endpoint لمسح الصورة
+
+// =============================
+// 🔍 Status Endpoint
+// =============================
+app.MapGet("/status", () =>
+{
+    try
+    {
+        var deviceManager = new DeviceManager();
+        bool hasScanner = false;
+
+        for (int i = 1; i <= deviceManager.DeviceInfos.Count; i++)
+        {
+            if (deviceManager.DeviceInfos[i].Type == WiaDeviceType.ScannerDeviceType)
+            {
+                hasScanner = true;
+                break;
+            }
+        }
+
+        if (!hasScanner)
+            return Results.Json(new { status = "no_scanner" });
+
+        return Results.Json(new { status = "ready" });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { status = "service_error", message = ex.Message });
+    }
+});
+
+
+// =============================
+// 📄 Scan Endpoint
+// =============================
 app.MapPost("/scan", (string format) =>
 {
     try
     {
+        if (!ScannerService.IsReady())
+            return Results.BadRequest(new { status = "no_scanner", message = "No scanner connected" });
+
         var img = ScannerService.ScanImage();
 
-        if (format == "pdf")
-            return Results.File(PdfHelper.ImageToPdf(img), "application/pdf", "scan.pdf");
+        if (format?.ToLower() == "pdf")
+            return Results.File(
+                PdfHelper.ImageToPdf(img),
+                "application/pdf",
+                "scan.pdf"
+            );
 
         return Results.File(img, "image/png");
     }
     catch (Exception ex)
     {
-        return Results.Text("Error: " + ex.Message);
+        return Results.Problem(
+            detail: ex.Message,
+            title: "Scan Failed",
+            statusCode: 500
+        );
     }
 });
 
-// ✅ إضافة Status Endpoint
-app.MapGet("/status", () =>
-{
-    try
-    {
-        // اختبار بسيط: محاولة مسح صورة صغيرة أو التحقق من ScannerService
-        bool scannerReady = ScannerService.IsReady(); // لو عندك دالة جاهزة
-        return Results.Json(new { status = scannerReady ? "ok" : "error" });
-    }
-    catch
-    {
-        return Results.Json(new { status = "error" });
-    }
-});
 
-// فتح المتصفح تلقائيًا على صفحة الحالة
+// =============================
+// 🌐 Auto Open Browser
+// =============================
 Task.Run(() =>
 {
     try
     {
         Process.Start(new ProcessStartInfo
         {
-            FileName = $"http://localhost:{port}/Index.html",
+            FileName = $"http://localhost:{port}/index.html",
             UseShellExecute = true
         });
     }
@@ -65,4 +99,5 @@ Task.Run(() =>
 });
 
 Console.WriteLine($"SudaScan Agent running on http://localhost:{port}");
+
 app.Run();

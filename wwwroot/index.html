@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>مكتبة مسح الملفات - اختبار تجريبي</title>
+    <title>مكتبة مسح الملفات</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,12 +24,7 @@
 
         h1 {
             color: #006633;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            color: #004d26;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         button {
@@ -40,7 +35,7 @@
             background-color: #006633;
             color: #fff;
             font-weight: bold;
-            margin: 5px;
+            margin: 10px;
             font-size: 16px;
         }
 
@@ -51,25 +46,14 @@
         #scanImage {
             width: 90%;
             max-width: 650px;
-            height: 350px;
+            height: 400px;
             object-fit: contain;
             border: 1px solid #ccc;
             margin-top: 20px;
             display: none;
         }
 
-        input {
-            width: 90%;
-            max-width: 400px;
-            font-size: 18px;
-            margin-top: 10px;
-            padding: 8px;
-            text-align: center;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-        }
-
-        #status, #agentStatusText, #endpoints {
+        #status {
             margin-top: 15px;
             font-weight: bold;
             color: #006633;
@@ -89,34 +73,25 @@
 
     <div class="box">
         <h1>مكتبة مسح الملفات</h1>
-        <h2>اختبار تجريبي</h2>
 
-        <!-- حالة المكتبة / Agent -->
+        <!-- حالة Agent -->
         <div>
-            حالة المكتبة / Agent:
+            حالة الجهاز:
             <span id="agentStatusDot" class="status-dot" style="background:red;"></span>
             <span id="agentStatusText">غير متصل</span>
         </div>
 
-        <!-- عرض عناوين Endpoints -->
-        <div id="endpoints">
-            <p>Endpoint المسح: <code>http://localhost:59486/scan?format=png</code></p>
-            <p>Endpoint الحالة: <code>http://localhost:59486/status</code></p>
-        </div>
+        <br>
 
-        <!-- أزرار المسح -->
-        <button onclick="scan()">مسح الجواز</button>
+        <!-- زر المسح -->
+        <button onclick="scan()">مسح ملف</button>
 
-        <!-- مساحة عرض الصورة -->
+        <!-- عرض الصورة -->
         <img id="scanImage" />
-
-        <label>الرقم الوطني:</label>
-        <input type="text" id="nationalId" readonly />
 
         <div id="status"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
         const agentScanUrl = "http://localhost:59486/scan?format=png";
         const agentStatusUrl = "http://localhost:59486/status";
@@ -124,17 +99,21 @@
         const agentStatusDot = document.getElementById("agentStatusDot");
         const agentStatusText = document.getElementById("agentStatusText");
 
-        // تحقق من حالة Agent
+        // فحص حالة Agent
         async function checkAgent() {
             try {
                 const res = await fetch(agentStatusUrl);
                 const data = await res.json();
-                if (data.status === "ok") {
+
+                if (data.status === "ready") {
                     agentStatusDot.style.background = "green";
-                    agentStatusText.innerText = "متصل";
+                    agentStatusText.innerText = "جاهز";
+                } else if (data.status === "no_scanner") {
+                    agentStatusDot.style.background = "orange";
+                    agentStatusText.innerText = "لا يوجد جهاز مسح";
                 } else {
                     agentStatusDot.style.background = "red";
-                    agentStatusText.innerText = "غير متصل";
+                    agentStatusText.innerText = "خطأ في الخدمة";
                 }
             } catch {
                 agentStatusDot.style.background = "red";
@@ -142,72 +121,34 @@
             }
         }
 
-        // تحقق تلقائي عند التحميل وكل ثانيتين
         checkAgent();
         setInterval(checkAgent, 2000);
 
         // وظيفة المسح
         function scan() {
             const img = document.getElementById("scanImage");
-            const nationalId = document.getElementById("nationalId");
             const status = document.getElementById("status");
 
             status.innerText = "جاري المسح...";
-            nationalId.value = "";
             img.style.display = "none";
 
             fetch(agentScanUrl, { method: "POST" })
-                .then(res => res.blob())
+                .then(res => {
+                    if (!res.ok) throw new Error("Scan failed");
+                    return res.blob();
+                })
                 .then(blob => {
                     const url = URL.createObjectURL(blob);
                     img.src = url;
                     img.onload = () => {
                         img.style.display = "block";
-                        status.innerText = "جاري قراءة الرقم الوطني...";
-                        readNationalId(img);
+                        status.innerText = "✔ تم المسح بنجاح";
                     };
                 })
                 .catch(err => {
                     console.error(err);
-                    status.innerText = "❌ فشل الاتصال بالـ Agent";
+                    status.innerText = "❌ فشل عملية المسح";
                 });
-        }
-
-        // وظيفة قراءة الرقم الوطني باستخدام Tesseract
-        function readNationalId(imageElement) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = imageElement.naturalWidth;
-            canvas.height = imageElement.naturalHeight;
-            ctx.drawImage(imageElement, 0, 0);
-
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < imgData.data.length; i += 4) {
-                const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-                imgData.data[i] = avg;
-                imgData.data[i + 1] = avg;
-                imgData.data[i + 2] = avg;
-            }
-            ctx.putImageData(imgData, 0, 0);
-
-            Tesseract.recognize(
-                canvas,
-                'eng',
-                { logger: m => console.log(m), tessedit_char_whitelist: '0123456789-' }
-            ).then(({ data: { text } }) => {
-                text = text.replace(/O/g, '0').replace(/I/g, '1').replace(/l/g, '1');
-                const match = text.match(/\d{3}-\d{4}-\d{4}/);
-                if (match) {
-                    nationalId.value = match[0];
-                    status.innerText = "✔ تم استخراج الرقم الوطني";
-                } else {
-                    status.innerText = "❌ لم يتم العثور على الرقم الوطني";
-                    console.log("النص المقروء:", text);
-                }
-            }).catch(err => {
-                console.error(err);
-                status.innerText = "❌ حدث خطأ أثناء قراءة الرقم الوطني";
-            });
         }
     </script>
 
